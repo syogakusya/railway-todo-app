@@ -11,18 +11,28 @@ export const NewTask = () => {
   const [lists, setLists] = useState([]);
   const [title, setTitle] = useState("");
   const [detail, setDetail] = useState("");
+  const [limit, setLimit] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [cookies] = useCookies();
   const history = useHistory();
   const handleTitleChange = (e) => setTitle(e.target.value);
   const handleDetailChange = (e) => setDetail(e.target.value);
   const handleSelectList = (id) => setSelectListId(id);
+  const handleLimitChange = (e) => setLimit(e.target.value);
   const onCreateTask = () => {
+    let _limit = limit;
+    if(_limit.length < 19){
+      _limit = _limit +":00";
+    }
+    _limit = _limit +"Z";
     const data = {
       title: title,
       detail: detail,
       done: false,
-    };
+      limit: _limit
+      }
+
+    console.log(data);
 
     axios
       .post(`${url}/lists/${selectListId}/tasks`, data, {
@@ -89,6 +99,15 @@ export const NewTask = () => {
             onChange={handleDetailChange}
             className="new-task-detail"
           />
+          <br />
+          <label>期限</label>
+          <br />
+          <input
+            type="datetime-local"
+            onChange={handleLimitChange}
+            className="new-task-limit"
+            step={1}
+            />
           <br />
           <button
             type="button"

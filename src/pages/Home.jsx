@@ -143,6 +143,8 @@ const Tasks = (props) => {
                 {task.title}
                 <br />
                 {task.done ? "完了" : "未完了"}
+                <br />
+                {"期限 : " + task.limit}
               </Link>
             </li>
           ))}
@@ -165,9 +167,42 @@ const Tasks = (props) => {
               {task.title}
               <br />
               {task.done ? "完了" : "未完了"}
+              <br />
+              {"期限 : " + adjustLimit(task.limit)}
+              <br />
+              <p className = "limitCaution">
+                {remainingTime(task.limit)}
+              </p>
             </Link>
           </li>
         ))}
     </ul>
   );
 };
+
+const adjustLimit = (limit) => {
+  if (limit === null) return "";
+  limit = limit.replace("T", " ").replace("Z", "");
+  //console.log(limit)
+  return limit;
+};
+
+const remainingTime = (limit) => {
+  limit = adjustLimit(limit);
+  limit = limit.split(" ");
+  limit = limit[0].split("-") +(",")+ limit[1].split(":");
+  limit = limit.split(",");
+  let date = new Date();
+  let nowTime = (limit[0] - date.getFullYear()) * 365*24*60 + (limit[1] - date.getMonth() - 1) * 30*24*60 + (limit[2] - date.getDate()) * 24*60 + (limit[3] - date.getHours()) * 60 + (limit[4] - date.getMinutes());
+  if(nowTime < 0){
+    return "期限切れ";
+  }else if(nowTime > 365 * 60 * 24){
+    return "残り時間 : 1年以上";
+  }else if(nowTime > 60 * 24){
+    return "残り時間 : 約"+  Math.floor(nowTime / 60 / 24) + "日";
+  }else if(nowTime > 60){
+    return "残り時間 : 約"+ Math.floor(nowTime / 60 )+ "時間";
+  }
+  return "残り時間 : " +  nowTime + "分";
+}
+
