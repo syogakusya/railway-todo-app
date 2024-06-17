@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { useCookies } from "react-cookie";
 import axios from "axios";
 import { Header } from "../components/Header";
 import { url } from "../const";
 import "./home.sass";
+import { current } from "@reduxjs/toolkit";
 
 export const Home = () => {
   const [isDoneDisplay, setIsDoneDisplay] = useState("todo"); // todo->未完了 done->完了
@@ -13,6 +14,8 @@ export const Home = () => {
   const [tasks, setTasks] = useState([]);
   const [errorMessage, setErrorMessage] = useState("");
   const [cookies] = useCookies();
+  const [activeListIndex, setActiveListIndex] = useState(0);
+const tabsRef = useRef([]);
   const handleIsDoneDisplayChange = (e) => setIsDoneDisplay(e.target.value);
   useEffect(() => {
     axios
@@ -63,6 +66,30 @@ export const Home = () => {
         setErrorMessage(`タスクの取得に失敗しました。${err}`);
       });
   };
+
+  const handleArrowKeyDown = (event, currentIndex) => {
+    let newIndex;
+    switch(event.key){
+      case 'ArrowRight':
+        newIndex = (currentIndex + 1) % lists.length;
+        break;
+      case 'ArrowLeft':
+        newIndex = (currentIndex + lists.length - 1) % lists.length;
+        break;
+      default:
+        return;
+    }
+    event.preventDefault();
+    handleSelectList(lists[newIndex].id);
+  }
+
+  useEffect(() => {
+    const selectedIndex = lists.findIndex((list) => list.id === selectListId);
+    if(tabsRef.current[selectedIndex]){
+      tabsRef.current[selectedIndex].focus();
+    }
+  },[selectListId, lists]);
+
   return (
     <div>
       <Header />
@@ -82,14 +109,19 @@ export const Home = () => {
               </p>
             </div>
           </div>
-          <ul className="list-tab">
+          <ul className="list-tab" role='tablist'>
             {lists.map((list, key) => {
               const isActive = list.id === selectListId;
               return (
                 <li
+                  role='tab'
+                  aria-selected={isActive}
+                  tabIndex={1}
                   key={key}
                   className={`list-tab-item ${isActive ? "active" : ""}`}
                   onClick={() => handleSelectList(list.id)}
+                  onKeyDown={(e) => handleArrowKeyDown(e, key)}
+                  ref={(el) => tabsRef.current[key] = el}
                 >
                   {list.title}
                 </li>
@@ -144,7 +176,11 @@ const Tasks = (props) => {
                 <br />
                 {task.done ? "完了" : "未完了"}
                 <br />
-                {"期限 : " + task.limit}
+                {"期限 : " + adjustLimit(task.limit)}
+                <br />
+                <p className = "limitCaution">
+                  {remainingTime(task.limit)}
+                </p>
               </Link>
             </li>
           ))}
